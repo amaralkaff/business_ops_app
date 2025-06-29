@@ -109,9 +109,16 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
           }
 
           if (snapshot.hasError) {
-            return Center(
-              child: AppCard(
-                child: Column(
+            return Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.backgroundGray,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Container(
@@ -152,7 +159,7 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                   ],
                 ),
               ),
-            );
+            ));
           }
 
           final attendance = snapshot.data;
@@ -160,11 +167,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
 
           return SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppCard(
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundGray,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -291,7 +304,13 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  AppCard(
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundGray,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Row(
                       children: [
                         Container(

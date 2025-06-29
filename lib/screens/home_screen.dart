@@ -3,8 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/attendance_service.dart';
 import '../models/attendance_model.dart';
+import '../models/request_model.dart';
 import '../widgets/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import 'request_screen.dart';
+import 'requests_list_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -23,11 +26,17 @@ class HomeScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppCard(
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundGray,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -91,7 +100,13 @@ class HomeScreen extends StatelessWidget {
                 stream: attendanceService.getTodayAttendanceStream(),
                 builder: (context, snapshot) {
                   final attendance = snapshot.data;
-                  return AppCard(
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: AppTheme.backgroundGray,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -168,46 +183,64 @@ class HomeScreen extends StatelessWidget {
                 childAspectRatio: 1.1,
                 children: [
                   _buildActionCard(
-                    icon: Icons.inventory_2_outlined,
-                    title: 'Inventory',
-                    subtitle: 'Manage products',
+                    icon: Icons.shopping_cart_outlined,
+                    title: 'Goods Request',
+                    subtitle: 'Request equipment',
                     color: const Color(0xFF27AE60),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Inventory feature coming soon!')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RequestScreen(
+                            requestType: RequestType.goods,
+                          ),
+                        ),
                       );
                     },
                   ),
                   _buildActionCard(
-                    icon: Icons.people_outline,
-                    title: 'Customers',
-                    subtitle: 'Customer management',
+                    icon: Icons.attach_money,
+                    title: 'Cash Request',
+                    subtitle: 'Request funds',
                     color: AppTheme.primaryBlue,
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Customer management coming soon!')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RequestScreen(
+                            requestType: RequestType.cash,
+                          ),
+                        ),
                       );
                     },
                   ),
                   _buildActionCard(
-                    icon: Icons.analytics_outlined,
-                    title: 'Analytics',
-                    subtitle: 'View reports',
+                    icon: Icons.time_to_leave_outlined,
+                    title: 'Leave Request',
+                    subtitle: 'Request time off',
                     color: const Color(0xFF9B59B6),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Analytics feature coming soon!')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RequestScreen(
+                            requestType: RequestType.leave,
+                          ),
+                        ),
                       );
                     },
                   ),
                   _buildActionCard(
-                    icon: Icons.settings_outlined,
-                    title: 'Settings',
-                    subtitle: 'App settings',
+                    icon: Icons.list_alt_outlined,
+                    title: 'My Requests',
+                    subtitle: 'View request history',
                     color: const Color(0xFFE67E22),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Settings feature coming soon!')),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RequestsListScreen(),
+                        ),
                       );
                     },
                   ),
@@ -230,21 +263,14 @@ class HomeScreen extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppTheme.backgroundGray,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -262,7 +288,7 @@ class HomeScreen extends StatelessWidget {
                     color: color,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 4),
                 Text(
                   title,
                   style: const TextStyle(
@@ -272,7 +298,6 @@ class HomeScreen extends StatelessWidget {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 4),
                 Text(
                   subtitle,
                   style: AppTheme.bodyTextSmall,

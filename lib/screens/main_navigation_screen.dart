@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../models/user_role_model.dart';
 import '../widgets/app_theme.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/role_guard.dart';
 import 'home_screen.dart';
 import 'attendance_screen.dart';
+import 'user_management_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -129,11 +132,17 @@ class ProfileScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AppCard(
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.backgroundGray,
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 child: Row(
                   children: [
                     Container(
@@ -180,20 +189,26 @@ class ProfileScreen extends StatelessWidget {
                             style: AppTheme.bodyText,
                           ),
                           const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF27AE60).withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: const Text(
-                              'Active',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF27AE60),
-                              ),
-                            ),
+                          StreamBuilder<UserRoleModel?>(
+                            stream: authService.getCurrentUserRoleStream(),
+                            builder: (context, snapshot) {
+                              final userRole = snapshot.data;
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF27AE60).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  userRole?.roleDisplayName ?? 'Staff',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF27AE60),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ],
                       ),
@@ -246,6 +261,26 @@ class ProfileScreen extends StatelessWidget {
                   );
                 },
               ),
+              const SizedBox(height: 12),
+              // User Management (HRD only)
+              RoleGuard(
+                permission: 'manage_users',
+                fallback: const SizedBox.shrink(),
+                child: _buildSettingTile(
+                  icon: Icons.admin_panel_settings_outlined,
+                  title: 'User Management',
+                  subtitle: 'Manage user roles and permissions',
+                  color: const Color(0xFF8E44AD),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UserManagementScreen(),
+                      ),
+                    );
+                  },
+                ),
+              ),
               const SizedBox(height: 40),
               CustomButton(
                 text: 'Sign Out',
@@ -272,21 +307,14 @@ class ProfileScreen extends StatelessWidget {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: AppTheme.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppTheme.backgroundGray,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Row(

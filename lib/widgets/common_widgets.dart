@@ -152,7 +152,7 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: margin ?? const EdgeInsets.all(16),
+      margin: margin ?? EdgeInsets.zero,
       padding: padding ?? const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppTheme.white,
