@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/attendance_service.dart';
+import '../services/role_service.dart';
 import '../models/attendance_model.dart';
 import '../models/request_model.dart';
+import '../models/user_role_model.dart';
 import '../widgets/app_theme.dart';
 import '../widgets/common_widgets.dart';
 import 'request_screen.dart';
 import 'requests_list_screen.dart';
+import 'request_approval_screen.dart';
+import 'dashboard_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -16,6 +20,7 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final AuthService authService = AuthService();
     final AttendanceService attendanceService = AttendanceService();
+    final RoleService roleService = RoleService();
     final User? user = authService.currentUser;
 
     return Scaffold(
@@ -174,77 +179,117 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 1.1,
-                children: [
-                  _buildActionCard(
-                    icon: Icons.shopping_cart_outlined,
-                    title: 'Goods Request',
-                    subtitle: 'Request equipment',
-                    color: const Color(0xFF27AE60),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RequestScreen(
-                            requestType: RequestType.goods,
-                          ),
+              FutureBuilder<UserRoleModel?>(
+                future: user != null ? roleService.getUserRole(user.uid) : null,
+                builder: (context, roleSnapshot) {
+                  final userRole = roleSnapshot.data;
+                  final canApprove = userRole?.canApproveRequests ?? false;
+                  final canViewReports = userRole?.canViewReports ?? false;
+                  
+                  return Column(
+                    children: [
+                      _buildActionListItem(
+                        icon: Icons.shopping_cart_outlined,
+                        title: 'Goods Request',
+                        subtitle: 'Request equipment and supplies',
+                        color: const Color(0xFF27AE60),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RequestScreen(
+                                requestType: RequestType.goods,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildActionListItem(
+                        icon: Icons.attach_money,
+                        title: 'Cash Request',
+                        subtitle: 'Request operational funds',
+                        color: AppTheme.primaryBlue,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RequestScreen(
+                                requestType: RequestType.cash,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildActionListItem(
+                        icon: Icons.time_to_leave_outlined,
+                        title: 'Leave Request',
+                        subtitle: 'Request time off and vacation',
+                        color: const Color(0xFF9B59B6),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RequestScreen(
+                                requestType: RequestType.leave,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildActionListItem(
+                        icon: Icons.list_alt_outlined,
+                        title: 'My Requests',
+                        subtitle: 'View request history and status',
+                        color: const Color(0xFFE67E22),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const RequestsListScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      if (canViewReports) ...[
+                        const SizedBox(height: 12),
+                        _buildActionListItem(
+                          icon: Icons.analytics_outlined,
+                          title: 'Analytics Dashboard',
+                          subtitle: 'View reports and analytics',
+                          color: const Color(0xFF9B59B6),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const DashboardScreen(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                  _buildActionCard(
-                    icon: Icons.attach_money,
-                    title: 'Cash Request',
-                    subtitle: 'Request funds',
-                    color: AppTheme.primaryBlue,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RequestScreen(
-                            requestType: RequestType.cash,
-                          ),
+                      ],
+                      if (canApprove) ...[
+                        const SizedBox(height: 12),
+                        _buildActionListItem(
+                          icon: Icons.approval_outlined,
+                          title: 'Approve Requests',
+                          subtitle: 'Review and approve pending requests',
+                          color: const Color(0xFFE74C3C),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RequestApprovalScreen(),
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
-                  _buildActionCard(
-                    icon: Icons.time_to_leave_outlined,
-                    title: 'Leave Request',
-                    subtitle: 'Request time off',
-                    color: const Color(0xFF9B59B6),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RequestScreen(
-                            requestType: RequestType.leave,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                  _buildActionCard(
-                    icon: Icons.list_alt_outlined,
-                    title: 'My Requests',
-                    subtitle: 'View request history',
-                    color: const Color(0xFFE67E22),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const RequestsListScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                ],
+                      ],
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 24),
             ],
@@ -254,7 +299,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildActionCard({
+  Widget _buildActionListItem({
     required IconData icon,
     required String title,
     required String subtitle,
@@ -262,6 +307,7 @@ class HomeScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: AppTheme.backgroundGray,
         borderRadius: BorderRadius.circular(12),
@@ -272,38 +318,48 @@ class HomeScreen extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
-                    size: 32,
+                    size: 24,
                     color: color,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: AppTheme.primaryDark,
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.primaryDark,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitle,
+                        style: AppTheme.bodyTextSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
-                  textAlign: TextAlign.center,
                 ),
-                Text(
-                  subtitle,
-                  style: AppTheme.bodyTextSmall,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+                Icon(
+                  Icons.chevron_right,
+                  color: AppTheme.textSecondary,
+                  size: 20,
                 ),
               ],
             ),

@@ -23,6 +23,12 @@ service cloud.firestore {
       return request.auth != null && getUserRole(request.auth.uid) == 'hrd';
     }
     
+    // Helper function to check if user can view reports
+    function canViewReports() {
+      return request.auth != null && 
+             getUserRole(request.auth.uid) in ['supervisor', 'hrd', 'finance'];
+    }
+    
     // User roles collection - Fixed circular dependency
     match /user_roles/{userId} {
       // Users can always read their own role (breaks circular dependency)
@@ -35,12 +41,14 @@ service cloud.firestore {
       allow delete: if false; // Never allow deletion
     }
     
-    // Attendance records - users can only access their own
+    // Attendance records - users can only access their own, supervisors can read all for analytics
     match /attendance/{document=**} {
       allow read, write: if request.auth != null && 
                          request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && 
                     request.auth.uid == request.resource.data.userId;
+      // Allow supervisors/HRD/finance to read all attendance for analytics
+      allow read: if canViewReports();
     }
     
     // Requests - users can read their own, approvers can read/update
@@ -50,6 +58,13 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
       allow update: if canApproveRequests();
       allow delete: if false; // Never allow deletion
+    }
+    
+    // Notifications - users can only access their own
+    match /notifications/{notificationId} {
+      allow read, update, delete: if request.auth != null && 
+                                  request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null;
     }
     
     // All other documents are denied by default

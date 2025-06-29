@@ -42,12 +42,15 @@ class RequestService {
     return _firestore
         .collection('requests')
         .where('userId', isEqualTo: currentUser!.uid)
-        .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) {
-      return snapshot.docs
+      final requests = snapshot.docs
           .map((doc) => RequestModel.fromFirestore(doc))
           .toList();
+      
+      // Sort by createdAt descending in memory to avoid index requirement
+      requests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return requests;
     });
   }
 
@@ -58,12 +61,15 @@ class RequestService {
       final snapshot = await _firestore
           .collection('requests')
           .where('userId', isEqualTo: currentUser!.uid)
-          .orderBy('createdAt', descending: true)
           .get();
 
-      return snapshot.docs
+      final requests = snapshot.docs
           .map((doc) => RequestModel.fromFirestore(doc))
           .toList();
+      
+      // Sort by createdAt descending in memory to avoid index requirement
+      requests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return requests;
     } catch (e) {
       throw Exception('Failed to fetch requests: $e');
     }
@@ -85,5 +91,40 @@ class RequestService {
     } catch (e) {
       throw Exception('Failed to update request status: $e');
     }
+  }
+
+  Future<List<RequestModel>> getAllPendingRequests() async {
+    try {
+      final snapshot = await _firestore
+          .collection('requests')
+          .where('status', isEqualTo: 'pending')
+          .get();
+
+      final requests = snapshot.docs
+          .map((doc) => RequestModel.fromFirestore(doc))
+          .toList();
+      
+      // Sort by createdAt descending in memory to avoid index requirement
+      requests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return requests;
+    } catch (e) {
+      throw Exception('Failed to fetch pending requests: $e');
+    }
+  }
+
+  Stream<List<RequestModel>> getAllPendingRequestsStream() {
+    return _firestore
+        .collection('requests')
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snapshot) {
+      final requests = snapshot.docs
+          .map((doc) => RequestModel.fromFirestore(doc))
+          .toList();
+      
+      // Sort by createdAt descending in memory to avoid index requirement
+      requests.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      return requests;
+    });
   }
 }

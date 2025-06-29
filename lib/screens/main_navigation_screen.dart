@@ -6,7 +6,9 @@ import '../widgets/common_widgets.dart';
 import '../widgets/role_guard.dart';
 import 'home_screen.dart';
 import 'attendance_screen.dart';
-import 'user_management_screen.dart';
+import 'dashboard_screen.dart';
+import 'request_approval_screen.dart';
+import 'admin_panel_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
   const MainNavigationScreen({super.key});
@@ -17,59 +19,124 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
-
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const AttendanceScreen(),
-    const ProfileScreen(),
-  ];
+  final AuthService _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.white,
-      body: _screens[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Container(
-            height: 80,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(
-                  icon: Icons.home_outlined,
-                  activeIcon: Icons.home,
-                  label: 'Home',
-                  index: 0,
-                ),
-                _buildNavItem(
-                  icon: Icons.access_time_outlined,
-                  activeIcon: Icons.access_time,
-                  label: 'Attendance',
-                  index: 1,
-                ),
-                _buildNavItem(
-                  icon: Icons.person_outline,
-                  activeIcon: Icons.person,
-                  label: 'Profile',
-                  index: 2,
+    return StreamBuilder<UserRoleModel?>(
+      stream: _authService.getCurrentUserRoleStream(),
+      builder: (context, roleSnapshot) {
+        final userRole = roleSnapshot.data;
+        final canViewReports = userRole?.canViewReports ?? false;
+        final canApproveRequests = userRole?.canApproveRequests ?? false;
+        final isHRD = userRole?.canManageUsers ?? false;
+        
+        final List<Widget> screens = [
+          const HomeScreen(),
+          const AttendanceScreen(),
+          if (canViewReports) const DashboardScreen(),
+          if (canApproveRequests) const RequestApprovalScreen(),
+          const ProfileScreen(),
+          if (isHRD) const AdminPanelScreen(),
+        ];
+
+        // Ensure current index doesn't exceed available screens
+        if (_currentIndex >= screens.length) {
+          _currentIndex = 0;
+        }
+        
+        return Scaffold(
+          backgroundColor: AppTheme.white,
+          body: screens[_currentIndex],
+          bottomNavigationBar: Container(
+            decoration: BoxDecoration(
+              color: AppTheme.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
                 ),
               ],
             ),
+            child: SafeArea(
+              child: Container(
+                height: 70,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: _buildDynamicNavigation(
+                  canViewReports: canViewReports,
+                  canApproveRequests: canApproveRequests,
+                  isHRD: isHRD,
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDynamicNavigation({
+    required bool canViewReports,
+    required bool canApproveRequests,
+    required bool isHRD,
+  }) {
+    final List<Map<String, dynamic>> navItems = [
+      {
+        'icon': Icons.home_outlined,
+        'activeIcon': Icons.home,
+        'label': 'Home',
+        'show': true,
+      },
+      {
+        'icon': Icons.access_time_outlined,
+        'activeIcon': Icons.access_time,
+        'label': 'Attendance',
+        'show': true,
+      },
+      {
+        'icon': Icons.analytics_outlined,
+        'activeIcon': Icons.analytics,
+        'label': 'Analytics',
+        'show': canViewReports,
+      },
+      {
+        'icon': Icons.approval_outlined,
+        'activeIcon': Icons.approval,
+        'label': 'Approvals',
+        'show': canApproveRequests,
+      },
+      {
+        'icon': Icons.person_outline,
+        'activeIcon': Icons.person,
+        'label': 'Profile',
+        'show': true,
+      },
+      {
+        'icon': Icons.admin_panel_settings_outlined,
+        'activeIcon': Icons.admin_panel_settings,
+        'label': 'Admin',
+        'show': isHRD,
+      },
+    ];
+
+    final visibleItems = navItems.where((item) => item['show'] == true).toList();
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: visibleItems.asMap().entries.map((entry) {
+        final index = entry.key;
+        final item = entry.value;
+        
+        return Expanded(
+          child: _buildNavItem(
+            icon: item['icon'],
+            activeIcon: item['activeIcon'],
+            label: item['label'],
+            index: index,
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -87,10 +154,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         });
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
         decoration: BoxDecoration(
-          color: isActive ? AppTheme.primaryDark.withOpacity(0.1) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
+          color: isActive ? AppTheme.primaryDark.withValues(alpha: 0.1) : Colors.transparent,
+          borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -98,16 +165,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             Icon(
               isActive ? activeIcon : icon,
               color: isActive ? AppTheme.primaryDark : AppTheme.textSecondary,
-              size: 24,
+              size: 20,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 10,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                 color: isActive ? AppTheme.primaryDark : AppTheme.textSecondary,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -196,7 +265,7 @@ class ProfileScreen extends StatelessWidget {
                               return Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF27AE60).withOpacity(0.1),
+                                  color: const Color(0xFF27AE60).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
@@ -262,25 +331,6 @@ class ProfileScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 12),
-              // User Management (HRD only)
-              RoleGuard(
-                permission: 'manage_users',
-                fallback: const SizedBox.shrink(),
-                child: _buildSettingTile(
-                  icon: Icons.admin_panel_settings_outlined,
-                  title: 'User Management',
-                  subtitle: 'Manage user roles and permissions',
-                  color: const Color(0xFF8E44AD),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const UserManagementScreen(),
-                      ),
-                    );
-                  },
-                ),
-              ),
               const SizedBox(height: 40),
               CustomButton(
                 text: 'Sign Out',
@@ -322,7 +372,7 @@ class ProfileScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(icon, color: color, size: 24),

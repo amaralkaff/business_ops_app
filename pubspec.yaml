@@ -45,6 +45,10 @@ dependencies:
   # Location
   location: ^5.0.0
   
+  # File operations
+  path_provider: ^2.1.1
+  share_plus: ^7.2.1
+  
   # Lottie animations
   lottie: ^3.1.2
 
